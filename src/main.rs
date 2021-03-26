@@ -3,5 +3,5 @@ fn catpeasant() {
 }
 
 fn main() {
-    catpeasant()
+    catpeasant();
 }

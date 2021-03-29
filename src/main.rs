@@ -1,8 +1,16 @@
+mod api;
 mod config;
 
+use api::get_user;
 use config::{load_env, DotEnv};
 
-fn main() {
-    let fake_env_var = load_env();
-    println!("Hello, {}!", fake_env_var.token);
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
+    let env = load_env();
+
+    let user = get_user(env.token).await?;
+
+    println!("{}", user.id);
+
+    Ok(())
 }

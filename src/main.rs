@@ -1,16 +1,21 @@
 mod api;
 mod config;
 
-use api::get_user;
-use config::{load_env, DotEnv};
+use api::ApiClient;
+use config::load_env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
     let env = load_env();
 
-    let user = get_user(env.token).await?;
+    let client = ApiClient::new(env.token).await?;
 
-    println!("{}", user.id);
+    println!(
+        "{:?}",
+        client
+            .search_categories("Minecraft".to_string(), None)
+            .await?
+    );
 
     Ok(())
 }

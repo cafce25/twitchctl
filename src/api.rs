@@ -1,6 +1,7 @@
 use std::error::Error;
 use twitch_api2::{
     helix::search::{search_categories::Category, SearchCategoriesRequest},
+    helix::tags::{GetAllStreamTagsRequest, TwitchTag},
     twitch_oauth2::{AccessToken, TwitchToken, UserToken},
     HelixClient,
 };
@@ -55,5 +56,19 @@ impl<'a> ApiClient<'a> {
         } else {
             Ok(None)
         }
+    }
+    pub async fn get_all_tags(&self) -> Result<Vec<TwitchTag>, Box<dyn Error>> {
+        let mut tags = vec![];
+        let mut pagination = None;
+        loop {
+            let req = GetAllStreamTagsRequest::builder().after(pagination).first(Some(100)).build();
+            let mut res = self.helix_client.req_get(req, &self.token).await?;
+            tags.append(&mut res.data);
+            pagination = res.pagination;
+            if pagination == None {
+                break;
+            }
+        }
+        Ok(tags)
     }
 }

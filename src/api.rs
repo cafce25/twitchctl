@@ -1,6 +1,11 @@
 use std::error::Error;
 use twitch_api2::{
-    helix::search::{search_categories::Category, SearchCategoriesRequest},
+    helix::{
+        search::{search_categories::Category, SearchCategoriesRequest},
+        streams::get_stream_tags::GetStreamTagsRequest,
+        tags::{GetAllStreamTagsRequest, TwitchTag},
+        users::GetUsersRequest,
+    },
     twitch_oauth2::{AccessToken, TwitchToken, UserToken},
     HelixClient,
 };
@@ -55,5 +60,34 @@ impl<'a> ApiClient<'a> {
         } else {
             Ok(None)
         }
+    }
+    pub async fn get_stream_tags(&self, login: String) -> Result<Vec<TwitchTag>, Box<dyn Error>> {
+        let channel_info_req = GetUsersRequest::builder().login(vec![login]).build();
+        let channel_info_res = self
+            .helix_client
+            .req_get(channel_info_req, &self.token)
+            .await?;
+        let tag_req = GetStreamTagsRequest::builder()
+            .broadcaster_id(channel_info_res.data[0].id.to_string())
+            .build();
+        let tag_res = self.helix_client.req_get(tag_req, &self.token).await?;
+        Ok(tag_res.data)
+    }
+    pub async fn get_all_tags(&self) -> Result<Vec<TwitchTag>, Box<dyn Error>> {
+        let mut tags = vec![];
+        let mut pagination = None;
+        loop {
+            let req = GetAllStreamTagsRequest::builder()
+                .after(pagination)
+                .first(Some(100))
+                .build();
+            let mut res = self.helix_client.req_get(req, &self.token).await?;
+            tags.append(&mut res.data);
+            pagination = res.pagination;
+            if pagination == None {
+                break;
+            }
+        }
+        Ok(tags)
     }
 }

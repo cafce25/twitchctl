@@ -3,35 +3,41 @@ use std::{path::PathBuf, str::FromStr};
 use structopt::{clap::Shell, StructOpt};
 use crate::tags::TagsOptions;
 
-#[derive(StructOpt)]
-#[structopt(name = "basic", about = "A sane Twitch commandline interface", version = "0.1.0")]
+/// A sane Twitch commandline interface
+#[derive(Debug, StructOpt)]
+#[structopt(name = "twitchctl", version = env!("CARGO_PKG_VERSION"))]
 pub struct CliOptions {
     #[structopt(subcommand)]
     pub category: Category,
 }
 
-#[derive(StructOpt)]
+#[derive(Debug, StructOpt)]
 pub enum Category {
-    #[structopt(about = "show all tags or tags for a specific broadcaster")]
+    /// show all tags or tags for a specific broadcaster
     Tags { 
         #[structopt(flatten)]
         options: TagsOptions,
     },
-    #[structopt(about = "searches in categories")]
+    /// searches in categories
     Search {
+        /// max amount of results to show
         #[structopt(short, long, default_value = "20")]
         max_results: usize,
+        /// the category in which to search
         category: String,
     },
-    #[structopt(about = "creates a file containing shell completions")]
+    /// creates a file containing shell completions
     Completions {
-        #[structopt(short, long, default_value = "completions", help = "in which directory the completion file will be written")]
+        /// the directory to write the completion file to
+        #[structopt(short, long, default_value = "completions")]
         target_dir: PathBuf,
-        #[structopt(help = "the shell for which the completions should be generated. (Currently supported values: bash, fish, zsh, powershell, elvish)")]
+        /// the shell for which the completions should be generated.
+        /// (currently supported values: bash, fish, zsh, powershell, elvish)
         shell: ShellType,
     },
 }
 
+#[derive(Debug)]
 pub enum ShellType {
     Bash,
     Fish,

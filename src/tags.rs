@@ -3,37 +3,39 @@ use structopt::StructOpt;
 use fuzzy_filter::FuzzyFilter;
 use twitch_api2::helix::tags::TwitchTag;
 
-#[derive(StructOpt)]
-#[structopt(about = "manipulate a streams tags")]
+#[derive(Debug, StructOpt)]
+/// manipulate a streams tags
 pub struct TagsOptions {
-    #[structopt(short = "i", long, default_value = "en-us", help = "the locale to use for the tag names")]
+    /// the locale to use for the tag names
+    #[structopt(short, long, default_value = "en-us")]
     pub locale: String,
 
     #[structopt(subcommand)]
     pub subcommand: TagsSubcommand,
 }
 
-#[derive(StructOpt)]
+#[derive(Debug, StructOpt)]
 pub enum TagsSubcommand {
-    #[structopt(about = "list all tags")]
+    /// list all available tags
     ListAll {
         #[structopt(flatten)]
         shared: SharedTagsOptions,
     },
-    #[structopt(about = "list tags for a broadcaster")]
+    /// list tags for a broadcaster
     List {
-        #[structopt(help = "the name of the broadcaster for which to list the tags")]
+        /// the name of the broadcaster for which to list the tags
         broadcaster: String,
         #[structopt(flatten)]
         shared: SharedTagsOptions,
     },
 }
 
-#[derive(StructOpt)]
+#[derive(Debug, StructOpt)]
 pub struct SharedTagsOptions {
-    #[structopt(short, help = "print tags in long format")]
+    /// print tags in long format
+    #[structopt(short)]
     long: bool,
-    #[structopt(help = "string for fuzzy filtering of tags")]
+    /// string for fuzzy filtering of tags
     filter: Option<String>,
 }
 

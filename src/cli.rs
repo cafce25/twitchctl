@@ -5,7 +5,7 @@ use crate::tags::TagsOptions;
 
 /// A sane Twitch commandline interface
 #[derive(Debug, StructOpt)]
-#[structopt(name = "twitchctl", version = env!("CARGO_PKG_VERSION"))]
+#[structopt(name = "twitchctl")]
 pub struct CliOptions {
     #[structopt(subcommand)]
     pub category: Category,

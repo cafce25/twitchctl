@@ -41,7 +41,7 @@ impl<'a> ApiClient<'a> {
     pub async fn search_categories(
         &self,
         term: String,
-        max: Option<usize>,
+        max: usize,
     ) -> Result<Option<Vec<Category>>, Box<dyn Error>> {
         // TODO Implement some better filter (only starting with for example) to reduce the number
         // of results for searches
@@ -52,7 +52,7 @@ impl<'a> ApiClient<'a> {
 
         let req = SearchCategoriesRequest::builder()
             .query(term)
-            .first(max.unwrap_or(20).max(1).min(100).to_string())
+            .first(max.max(1).min(100).to_string())
             .build();
         let res: Vec<Category> = self.helix_client.req_get(req, &self.token).await?.data;
         if res.len() > 0 {

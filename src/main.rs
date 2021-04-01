@@ -6,15 +6,15 @@ mod config;
 mod tags;
 
 use api::ApiClient;
-use cli::{CliOptions, SubCommand};
+use cli::{CliOptions, Category};
 use config::load_env;
 use tags::tags;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let CliOptions { subcommand } = CliOptions::from_args();
+    let CliOptions { category } = CliOptions::from_args();
 
-    if let SubCommand::Completions { shell, target_dir } = &subcommand {
+    if let Category::Completions { shell, target_dir } = &category {
         if !target_dir.exists() {
             std::fs::create_dir_all(target_dir)?;
         }
@@ -23,21 +23,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    // check token after cli and completions are done
+    // otherwise the tool crashes when you try to call it with -h
     let env = load_env();
-
     let client = ApiClient::new(env.token).await?;
 
-    match subcommand {
-        SubCommand::Tags { options } => tags(client, &options.locale, options.subcommand).await,
-        SubCommand::SearchCategories => {
+    match category {
+        Category::Tags { options } => tags(client, &options.locale, options.subcommand).await,
+        Category::Search { category, max_results } => {
             println!(
                 "{:?}",
                 client
-                    .search_categories("Minecraft".to_string(), None)
+                    .search_categories(category, max_results)
                     .await?
             );
         }
-        SubCommand::Completions { .. } => {
+        Category::Completions { .. } => {
             unreachable!("already handled above!")
         }
     }

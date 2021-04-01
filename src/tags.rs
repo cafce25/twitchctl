@@ -6,7 +6,7 @@ use twitch_api2::helix::tags::TwitchTag;
 #[derive(StructOpt)]
 #[structopt(about = "manipulate a streams tags")]
 pub struct TagsOptions {
-    #[structopt(short = "i", long, default_value = "en-us")]
+    #[structopt(short = "i", long, default_value = "en-us", help = "the locale to use for the tag names")]
     pub locale: String,
 
     #[structopt(subcommand)]
@@ -15,51 +15,54 @@ pub struct TagsOptions {
 
 #[derive(StructOpt)]
 pub enum TagsSubcommand {
+    #[structopt(about = "list all tags")]
     ListAll {
         #[structopt(flatten)]
         shared: SharedTagsOptions,
     },
+    #[structopt(about = "list tags for a broadcaster")]
     List {
+        #[structopt(help = "the name of the broadcaster for which to list the tags")]
+        broadcaster: String,
         #[structopt(flatten)]
         shared: SharedTagsOptions,
-        broadcaster: String,
     },
 }
 
 #[derive(StructOpt)]
 pub struct SharedTagsOptions {
-    #[structopt(short)]
+    #[structopt(short, help = "print tags in long format")]
     long: bool,
-    #[structopt(short, long)]
-    search_string: Option<String>,
+    #[structopt(help = "string for fuzzy filtering of tags")]
+    filter: Option<String>,
 }
 
 pub async fn tags<'a>(client: ApiClient<'a>, locale: &str, command: TagsSubcommand) {
     match command {
-        TagsSubcommand::ListAll { shared: SharedTagsOptions { long, search_string: needle } } => {
+        TagsSubcommand::ListAll { shared: SharedTagsOptions { long, filter } } => {
             let tags = client.get_all_tags().await.expect("valid tags");
             list(
                 &tags,
                 locale,
-                needle.as_ref(),
+                filter.as_ref(),
                 long,
             )
         }
-        TagsSubcommand::List { shared: SharedTagsOptions { long, search_string: needle }, broadcaster } => {
+        TagsSubcommand::List { shared: SharedTagsOptions { long, filter }, broadcaster } => {
             let tags = client.get_stream_tags(broadcaster).await.expect("valid tags");
             list(
                 &tags,
                 locale,
-                needle.as_ref(),
+                filter.as_ref(),
                 long,
             )
         }
     }
 }
 
-fn list<'a>(tags: &[TwitchTag], locale: &'a str, needle: Option<&'a String>, long: bool) {
-    let filter = if let Some(needle) = needle {
-        FuzzyFilter::new(needle)
+fn list<'a>(tags: &[TwitchTag], locale: &'a str, filter_string: Option<&'a String>, long: bool) {
+    let filter = if let Some(filter_string) = filter_string {
+        FuzzyFilter::new(filter_string)
     } else {
         FuzzyFilter::new("")
     };

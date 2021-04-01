@@ -7,21 +7,27 @@ use crate::tags::TagsOptions;
 #[structopt(name = "basic", about = "A sane Twitch commandline interface", version = "0.1.0")]
 pub struct CliOptions {
     #[structopt(subcommand)]
-    pub subcommand: SubCommand,
+    pub category: Category,
 }
 
 #[derive(StructOpt)]
-pub enum SubCommand {
+pub enum Category {
+    #[structopt(about = "show all tags or tags for a specific broadcaster")]
     Tags { 
         #[structopt(flatten)]
         options: TagsOptions,
     },
     #[structopt(about = "searches in categories")]
-    SearchCategories,
+    Search {
+        #[structopt(short, long, default_value = "20")]
+        max_results: usize,
+        category: String,
+    },
     #[structopt(about = "creates a file containing shell completions")]
     Completions {
-        #[structopt(short, long, default_value = "completions")]
+        #[structopt(short, long, default_value = "completions", help = "in which directory the completion file will be written")]
         target_dir: PathBuf,
+        #[structopt(help = "the shell for which the completions should be generated. (Currently supported values: bash, fish, zsh, powershell, elvish)")]
         shell: ShellType,
     },
 }

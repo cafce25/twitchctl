@@ -1,30 +1,34 @@
+use structopt::StructOpt;
+
 mod api;
+mod cli;
 mod config;
 mod tags;
 
 use api::ApiClient;
-use clap::App;
+use cli::{CliOptions, SubCommand};
 use config::load_env;
-use tags::{tags, get_tags_app};
+use tags::tags;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let CliOptions { subcommand } = CliOptions::from_args();
+
+    if let SubCommand::Completions { shell, target_dir } = &subcommand {
+        if !target_dir.exists() {
+            std::fs::create_dir_all(target_dir)?;
+        }
+        CliOptions::clap().gen_completions(env!("CARGO_PKG_NAME"), shell.into(), target_dir);
+        return Ok(());
+    }
+
     let env = load_env();
 
     let client = ApiClient::new(env.token).await?;
 
-    let matches = App::new("twitchctl")
-        .version("0.1.0")
-        .about("A sane Twitch commandline interface")
-        .subcommand(
-            get_tags_app()
-        )
-        .subcommand(App::new("search_categories").about("searches in categories"))
-        .get_matches();
-
-    match matches.subcommand() {
-        ("tags", Some(sub_m)) => tags(client, sub_m).await,
-        ("search_categories", _) => {
+    match subcommand {
+        SubCommand::Tags { options } => tags(client, &options.locale, options.subcommand).await,
+        SubCommand::SearchCategories => {
             println!(
                 "{:?}",
                 client
@@ -32,7 +36,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .await?
             );
         }
-        _ => {}
+        SubCommand::Completions { .. } => {
+            unreachable!("already handled above!")
+        }
     }
 
     Ok(())

@@ -19,6 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::fs::create_dir_all(target_dir)?;
         }
         CliOptions::clap().gen_completions(env!("CARGO_PKG_NAME"), shell.into(), target_dir);
+        println!("Completions file has been written to the directory: {}", target_dir.to_string_lossy());
         return Ok(());
     }
 

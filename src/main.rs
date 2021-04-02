@@ -1,38 +1,46 @@
+use structopt::StructOpt;
+
 mod api;
+mod cli;
 mod config;
 mod tags;
 
 use api::ApiClient;
-use clap::App;
+use cli::{CliOptions, Category};
 use config::load_env;
-use tags::{tags, get_tags_app};
+use tags::tags;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = load_env();
+    let CliOptions { category } = CliOptions::from_args();
 
+    if let Category::Completions { shell, target_dir } = &category {
+        if !target_dir.exists() {
+            std::fs::create_dir_all(target_dir)?;
+        }
+        CliOptions::clap().gen_completions(env!("CARGO_PKG_NAME"), shell.into(), target_dir);
+        println!("Completions file has been written to the directory: {}", target_dir.to_string_lossy());
+        return Ok(());
+    }
+
+    // check token after cli and completions are done
+    // otherwise the tool crashes when you try to call it with -h
+    let env = load_env();
     let client = ApiClient::new(env.token).await?;
 
-    let matches = App::new("twitchctl")
-        .version("0.1.0")
-        .about("A sane Twitch commandline interface")
-        .subcommand(
-            get_tags_app()
-        )
-        .subcommand(App::new("search_categories").about("searches in categories"))
-        .get_matches();
-
-    match matches.subcommand() {
-        ("tags", Some(sub_m)) => tags(client, sub_m).await,
-        ("search_categories", _) => {
+    match category {
+        Category::Tags { options } => tags(client, &options.locale, options.subcommand).await,
+        Category::Search { category, max_results } => {
             println!(
                 "{:?}",
                 client
-                    .search_categories("Minecraft".to_string(), None)
+                    .search_categories(category, max_results)
                     .await?
             );
         }
-        _ => {}
+        Category::Completions { .. } => {
+            unreachable!("already handled above!")
+        }
     }
 
     Ok(())

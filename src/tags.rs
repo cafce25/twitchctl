@@ -1,78 +1,70 @@
 use super::api::ApiClient;
-use clap::{App, Arg, ArgMatches};
+use structopt::StructOpt;
 use fuzzy_filter::FuzzyFilter;
 use twitch_api2::helix::tags::TwitchTag;
 
-pub fn get_tags_app<'a>() -> App<'a, 'a> {
-    App::new("tags")
-        .about("manipulate a streams tags")
-        .arg(
-            Arg::with_name("locale")
-                .short("i")
-                .long("locale")
-                .default_value("en-us"),
-        )
-        .subcommand(
-            App::new("listall")
-                .arg(
-                    Arg::with_name("long")
-                        .short("l")
-                        .help("use a long listing format"),
-                )
-                .arg(
-                    Arg::with_name("needle")
-                        .index(1)
-                        .help("filter tags with a fuzzy search"),
-                ),
-        )
-        .subcommand(
-            App::new("list")
-                .arg(
-                    Arg::with_name("long")
-                        .short("l")
-                        .help("use a long listing format"),
-                )
-                .arg(
-                    Arg::with_name("broadcaster")
-                        .index(1)
-                        .required(true)
-                        .help("the broadcaster you want to fetch tags for"),
-                        //TODO default to the one running this command
-                )
-                .arg(
-                    Arg::with_name("needle")
-                        .index(2)
-                        .help("filter tags with a fuzzy search"),
-                ),
-        )
+#[derive(Debug, StructOpt)]
+/// manipulate a streams tags
+pub struct TagsOptions {
+    /// the locale to use for the tag names
+    #[structopt(short, long, default_value = "en-us")]
+    pub locale: String,
+
+    #[structopt(subcommand)]
+    pub subcommand: TagsSubcommand,
 }
 
-pub async fn tags<'a>(client: ApiClient<'a>, matches: &ArgMatches<'a>) {
-    match matches.subcommand() {
-        ("listall", Some(sub_m)) => {
+#[derive(Debug, StructOpt)]
+pub enum TagsSubcommand {
+    /// list all available tags
+    ListAll {
+        #[structopt(flatten)]
+        shared: SharedTagsOptions,
+    },
+    /// list tags for a broadcaster
+    List {
+        /// the name of the broadcaster for which to list the tags
+        broadcaster: String,
+        #[structopt(flatten)]
+        shared: SharedTagsOptions,
+    },
+}
+
+#[derive(Debug, StructOpt)]
+pub struct SharedTagsOptions {
+    /// print tags in long format
+    #[structopt(short)]
+    long: bool,
+    /// string for fuzzy filtering of tags
+    filter: Option<String>,
+}
+
+pub async fn tags<'a>(client: ApiClient<'a>, locale: &str, command: TagsSubcommand) {
+    match command {
+        TagsSubcommand::ListAll { shared: SharedTagsOptions { long, filter } } => {
             let tags = client.get_all_tags().await.expect("valid tags");
             list(
                 &tags,
-                matches.value_of("locale").unwrap(),
-                sub_m.value_of("needle"),
-                sub_m.is_present("long"),
+                locale,
+                filter.as_ref(),
+                long,
             )
         }
-        ("list", Some(sub_m)) => {
-            let tags = client.get_stream_tags(sub_m.value_of("broadcaster").unwrap().to_string()).await.expect("valid tags");
+        TagsSubcommand::List { shared: SharedTagsOptions { long, filter }, broadcaster } => {
+            let tags = client.get_stream_tags(broadcaster).await.expect("valid tags");
             list(
                 &tags,
-                matches.value_of("locale").unwrap(),
-                sub_m.value_of("needle"),
-                sub_m.is_present("long"),
+                locale,
+                filter.as_ref(),
+                long,
             )
         }
-        _ => {}
     }
 }
-fn list<'a>(tags: &[TwitchTag], locale: &'a str, needle: Option<&str>, long: bool) {
-    let filter = if let Some(needle) = needle {
-        FuzzyFilter::new(needle)
+
+fn list<'a>(tags: &[TwitchTag], locale: &'a str, filter_string: Option<&'a String>, long: bool) {
+    let filter = if let Some(filter_string) = filter_string {
+        FuzzyFilter::new(filter_string)
     } else {
         FuzzyFilter::new("")
     };

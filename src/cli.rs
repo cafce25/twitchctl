@@ -1,7 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
 
-use structopt::{clap::Shell, StructOpt};
 use crate::tags::TagsOptions;
+use structopt::{clap::Shell, StructOpt};
 
 /// A sane Twitch commandline interface
 #[derive(Debug, StructOpt)]
@@ -14,7 +14,7 @@ pub struct CliOptions {
 #[derive(Debug, StructOpt)]
 pub enum Category {
     /// show all tags or tags for a specific broadcaster
-    Tags { 
+    Tags {
         #[structopt(flatten)]
         options: TagsOptions,
     },
@@ -62,11 +62,11 @@ impl FromStr for ShellType {
 }
 
 impl Into<Shell> for &ShellType {
-    fn into(self) -> Shell { 
+    fn into(self) -> Shell {
         match self {
             ShellType::Bash => Shell::Bash,
             ShellType::Fish => Shell::Fish,
-            ShellType::Zsh  => Shell::Zsh,
+            ShellType::Zsh => Shell::Zsh,
             ShellType::PowerShell => Shell::PowerShell,
             ShellType::Elvish => Shell::Elvish,
         }

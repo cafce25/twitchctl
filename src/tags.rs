@@ -234,4 +234,7 @@ fn list(tags: &[TwitchTag], locale: &str, filter: Option<String>, long: bool) {
             }
         }
     }
+    if !long {
+        println!()
+    }
 }

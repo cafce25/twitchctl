@@ -1,6 +1,6 @@
 use super::api::ApiClient;
-use structopt::StructOpt;
 use fuzzy_filter::FuzzyFilter;
+use structopt::StructOpt;
 use twitch_api2::helix::tags::TwitchTag;
 
 #[derive(Debug, StructOpt)]
@@ -24,7 +24,9 @@ pub enum TagsSubcommand {
     /// list tags for a broadcaster
     List {
         /// the name of the broadcaster for which to list the tags
-        broadcaster: String,
+        ///
+        /// if omitted the token user is used
+        broadcaster: Option<String>,
         #[structopt(flatten)]
         shared: SharedTagsOptions,
     },
@@ -41,23 +43,25 @@ pub struct SharedTagsOptions {
 
 pub async fn tags<'a>(client: ApiClient<'a>, locale: &str, command: TagsSubcommand) {
     match command {
-        TagsSubcommand::ListAll { shared: SharedTagsOptions { long, filter } } => {
+        TagsSubcommand::ListAll {
+            shared: SharedTagsOptions { long, filter },
+        } => {
             let tags = client.get_all_tags().await.expect("valid tags");
-            list(
-                &tags,
-                locale,
-                filter.as_ref(),
-                long,
-            )
+            list(&tags, locale, filter.as_ref(), long)
         }
-        TagsSubcommand::List { shared: SharedTagsOptions { long, filter }, broadcaster } => {
-            let tags = client.get_stream_tags(broadcaster).await.expect("valid tags");
-            list(
-                &tags,
-                locale,
-                filter.as_ref(),
-                long,
-            )
+        TagsSubcommand::List {
+            shared: SharedTagsOptions { long, filter },
+            broadcaster,
+        } => {
+            let tags = client
+                .get_stream_tags(if broadcaster.is_some() {
+                    broadcaster.as_ref().unwrap()
+                } else {
+                    client.get_user()
+                })
+                .await
+                .expect("valid tags");
+            list(&tags, locale, filter.as_ref(), long)
         }
     }
 }

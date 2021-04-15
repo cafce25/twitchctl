@@ -13,10 +13,14 @@ use twitch_oauth2::client::surf_http_client;
 
 use derivative::Derivative;
 
-async fn get_user(token_string: String) -> Result<UserToken, Box<dyn Error + 'static>> {
-    let token =
-        UserToken::from_existing(surf_http_client, AccessToken::new(token_string), None, None)
-            .await?;
+async fn get_user(token_string: &str) -> Result<UserToken, Box<dyn Error + 'static>> {
+    let token = UserToken::from_existing(
+        surf_http_client,
+        AccessToken::new(token_string.to_string()),
+        None,
+        None,
+    )
+    .await?;
     token.validate_token(surf_http_client).await?;
 
     Ok(token)
@@ -31,24 +35,26 @@ pub struct ApiClient<'a> {
 }
 
 impl<'a> ApiClient<'a> {
-    pub async fn new(token: String) -> Result<ApiClient<'a>, Box<dyn Error>> {
+    pub async fn new(token: &str) -> Result<ApiClient<'a>, Box<dyn Error>> {
         Ok(ApiClient {
             helix_client: HelixClient::with_client(surf::Client::new()),
             token: get_user(token).await?,
         })
     }
 
+    pub fn get_user(&self) -> &str {
+        self.token.login.as_ref()
+    }
+
     pub async fn search_categories(
         &self,
-        term: String,
+        term: &str,
         max: usize,
     ) -> Result<Option<Vec<Category>>, Box<dyn Error>> {
         // TODO Implement some better filter (only starting with for example) to reduce the number
         // of results for searches
 
         // TODO Maybe only return Some(Category) for one result.
-
-        // FIXME This can throw an error when noting is found https://github.com/Emilgardis/twitch_api2/issues/92
 
         let req = SearchCategoriesRequest::builder()
             .query(term)
@@ -61,12 +67,17 @@ impl<'a> ApiClient<'a> {
             Ok(None)
         }
     }
-    pub async fn get_stream_tags(&self, login: String) -> Result<Vec<TwitchTag>, Box<dyn Error>> {
-        let channel_info_req = GetUsersRequest::builder().login(vec![login]).build();
+    pub async fn get_stream_tags(&self, login: &str) -> Result<Vec<TwitchTag>, Box<dyn Error>> {
+        let channel_info_req = GetUsersRequest::builder()
+            .login(vec![login.to_string()])
+            .build();
         let channel_info_res = self
             .helix_client
             .req_get(channel_info_req, &self.token)
             .await?;
+        if channel_info_res.data.len() == 0 {
+            panic!("No user with login `{}` found.", login);
+        }
         let tag_req = GetStreamTagsRequest::builder()
             .broadcaster_id(channel_info_res.data[0].id.to_string())
             .build();

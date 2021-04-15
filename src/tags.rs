@@ -54,10 +54,9 @@ pub async fn tags<'a>(client: ApiClient<'a>, locale: &str, command: TagsSubcomma
             broadcaster,
         } => {
             let tags = client
-                .get_stream_tags(if broadcaster.is_some() {
-                    broadcaster.as_ref().unwrap()
-                } else {
-                    client.get_user()
+                .get_stream_tags(match broadcaster.as_ref() {
+                    Some(b) => b,
+                    None => client.get_user(),
                 })
                 .await
                 .expect("valid tags");

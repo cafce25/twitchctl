@@ -13,6 +13,12 @@ use twitch_oauth2::client::surf_http_client;
 
 use derivative::Derivative;
 
+#[derive(thiserror::Error, Debug)]
+enum ApiError {
+    #[error("No user with login `{0}` found.")]
+    NoUser(String),
+}
+
 async fn get_user(token_string: &str) -> Result<UserToken, Box<dyn Error + 'static>> {
     let token = UserToken::from_existing(
         surf_http_client,
@@ -76,7 +82,7 @@ impl<'a> ApiClient<'a> {
             .req_get(channel_info_req, &self.token)
             .await?;
         if channel_info_res.data.len() == 0 {
-            panic!("No user with login `{}` found.", login);
+            return Err(Box::new(ApiError::NoUser(login.to_string())));
         }
         let tag_req = GetStreamTagsRequest::builder()
             .broadcaster_id(channel_info_res.data[0].id.to_string())

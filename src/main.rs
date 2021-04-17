@@ -1,9 +1,14 @@
+use crate::file::handle_file;
 use structopt::StructOpt;
 
 mod api;
 mod cli;
 mod config;
+mod file;
 mod tags;
+
+#[macro_use]
+mod macros;
 
 use api::ApiClient;
 use cli::{Category, CliOptions};
@@ -42,6 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 client.search_categories(&category, max_results).await?
             );
         }
+        Category::File { file, noenv } => handle_file(client, file, noenv).await?,
         Category::Completions { .. } => {
             unreachable!("already handled above!")
         }

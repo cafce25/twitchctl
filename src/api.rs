@@ -237,27 +237,18 @@ impl<'a> ApiClient<'a> {
 pub struct ChannelInfo {
     title: Option<String>,
     language: Option<String>,
-    game: Option<String>,
+    category: Option<String>,
 }
 impl ChannelInfo {
     fn to_modify_body(&self) -> ModifyChannelInformationBody {
-        match (&self.title, &self.game) {
-            (Some(t), Some(g)) => ModifyChannelInformationBody::builder()
-                .title(t)
-                .game_id(g)
-                .broadcaster_language(self.language.clone())
-                .build(),
-            (Some(t), None) => ModifyChannelInformationBody::builder()
-                .title(t)
-                .broadcaster_language(self.language.clone())
-                .build(),
-            (None, Some(g)) => ModifyChannelInformationBody::builder()
-                .game_id(g)
-                .broadcaster_language(self.language.clone())
-                .build(),
-            (None, None) => ModifyChannelInformationBody::builder()
-                .broadcaster_language(self.language.clone())
-                .build(),
+        let builder =
+            ModifyChannelInformationBody::builder().broadcaster_language(self.language.clone());
+
+        match (&self.title, &self.category) {
+            (Some(t), Some(g)) => builder.title(t).game_id(g).build(),
+            (Some(t), None) => builder.title(t).build(),
+            (None, Some(g)) => builder.game_id(g).build(),
+            (None, None) => builder.build(),
         }
     }
 }

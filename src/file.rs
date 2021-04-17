@@ -1,6 +1,6 @@
 use crate::api::ChannelInfoBuilder;
 use crate::ApiClient;
-use crate::{exit, matches_any};
+use crate::{exit, matches_any, warning};
 use figment::{
     providers::{Env, Format, Toml, Yaml},
     Figment,
@@ -48,7 +48,7 @@ pub async fn handle_file(
                         tags.as_slice(),
                         match config.config_locale.as_ref() {
                             Some(locale) => locale,
-                            None => "en_us",
+                            None => "en-us",
                         },
                     )
                     .await?,
@@ -77,7 +77,7 @@ pub async fn handle_file(
             .await?;
     }
     if let Some(_notification) = config.notification {
-        eprintln!("Setting notification is not yet supported");
+        warning!("Setting notification is not yet supported");
     }
 
     Ok(())

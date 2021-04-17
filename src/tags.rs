@@ -1,5 +1,5 @@
 use crate::api::{ApiClient, UserIdent};
-use crate::exit;
+use crate::{exit, warning};
 use fuzzy_filter::FuzzyFilter;
 use structopt::StructOpt;
 use twitch_api2::{
@@ -133,7 +133,10 @@ pub async fn tags(client: ApiClient<'_>, locale: &str, command: TagsSubcommand) 
             };
 
             if new_tags.len() != tags.len() {
-                eprintln!("could not convert all tags to tag ids");
+                warning!(
+                    "Could not convert all tags to tag ids. \
+                    Check if all Tags are set correctly with `twitchctl tags list`"
+                );
             }
 
             let mut current_tags = current_tags.await;

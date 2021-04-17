@@ -15,3 +15,10 @@ macro_rules! matches_any {
         $value.eq_ignore_ascii_case($first) || matches_any!($value, $($pattern), +)
     };
 }
+
+#[macro_export]
+macro_rules! warning {
+    ($($message:expr), +) => {
+        eprintln!("[WARNING] {}", format!($($message), +));
+    };
+}

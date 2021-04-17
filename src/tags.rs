@@ -179,9 +179,6 @@ pub async fn tags(client: ApiClient<'_>, locale: &str, command: TagsSubcommand) 
 }
 
 async fn get_broadcaster_id_or_die(client: &ApiClient<'_>, broadcaster: Option<String>, broadcaster_id: Option<String>) -> UserId {
-    if broadcaster.is_some() && broadcaster_id.is_some() {
-        eprintln!("specified both broadcaster and broadcaster_id defaulting to the id");
-    }
 
     let broadcaster_id = match (broadcaster, broadcaster_id) {
         (_, Some(i)) => client.get_broadcaster_id(UserIdent::UserId(i.into())),

@@ -35,6 +35,22 @@ pub enum Category {
         /// (currently supported values: bash, fish, zsh, powershell, elvish)
         shell: ShellType,
     },
+    /// applies a stream configuration from a config file
+    ///
+    /// Supported formats are TOML, INI, YAML, JSON.
+    ///
+    /// You can use environment variables prefixed with
+    /// `TWITCHCTL_` to override settings in the config file.
+    ///
+    /// Environment variables prefixed with `TWITCHCTL_DEFAULT_`
+    /// are taken as default value that will be overridden by both
+    /// `TWITCHCTL_` variables and the config file.
+    File {
+        /// Environment variables will be ignored
+        #[structopt(long)]
+        noenv: bool,
+        file: PathBuf,
+    },
 }
 
 #[derive(Debug)]

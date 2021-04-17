@@ -37,24 +37,33 @@ pub async fn handle_file(
     if !noenv {
         fig = fig.merge(Env::prefixed("TWITCHCTL_"));
     }
-    let config: Config = fig.extract()?;
+    let config: Config = fig
+        .extract()
+        .unwrap_or_else(|e| exit!(1, "Failed to parse configuration: {:?}", e));
+    // To not move config struct
+    let tags = config.tags;
+    let locale = config.config_locale;
 
-    if let Some(tags) = config.tags {
-        client
-            .replace_stream_tags(
-                client.get_user_id(),
-                client
-                    .get_tag_ids_matching(
-                        tags.as_slice(),
-                        match config.config_locale.as_ref() {
-                            Some(locale) => locale,
-                            None => "en-us",
-                        },
-                    )
-                    .await?,
-            )
-            .await?;
-    }
+    let tag_rq = async {
+        if let Some(tags) = tags {
+            client
+                .replace_stream_tags(
+                    client.get_user_id(),
+                    client
+                        .get_tag_ids_matching(
+                            tags.as_slice(),
+                            match locale.as_ref() {
+                                Some(locale) => locale,
+                                None => "en-us",
+                            },
+                        )
+                        .await
+                        .unwrap_or_else(|e| exit!(1, "Failed to request tags: {:?}", e)),
+                )
+                .await
+                .unwrap_or_else(|e| exit!(1, "Failed to set tags: {:?}", e));
+        }
+    };
     if config.language.is_some() || config.title.is_some() || config.category.is_some() {
         let mut builder = ChannelInfoBuilder::default();
         if let Some(lang) = config.language {
@@ -64,21 +73,24 @@ pub async fn handle_file(
             builder.title(title);
         }
         if let Some(category) = config.category {
-            builder.game(
+            builder.category(
                 client
                     .search_category(&category)
-                    .await?
-                    .unwrap_or_else(|| exit!(1, "Could not find a game for `{}`", category))
+                    .await
+                    .unwrap_or_else(|e| exit!(1, "Failed to request category: {:?}", e))
+                    .unwrap_or_else(|| exit!(1, "Could not find a category for `{}`", category))
                     .id,
             );
         }
         client
             .modify_channel_information(client.get_user_id(), builder.build().unwrap())
-            .await?;
+            .await
+            .unwrap_or_else(|e| exit!(1, "Failed to set channel information: {:?}", e))
     }
     if let Some(_notification) = config.notification {
         warning!("Setting notification is not yet supported");
     }
+    tag_rq.await;
 
     Ok(())
 }

@@ -1,3 +1,3 @@
 https://twitchtokengenerator.com/ for generating your tokens is recommended.
 
-Currently works with 1.53.0-nightly
+Currently works with nightly-2021-04-19

@@ -19,9 +19,17 @@ struct Config {
     notification: Option<String>,
 }
 
+pub fn valid_extension(file: &PathBuf) -> bool {
+    if let Some(e) = file.extension() {
+        matches_any!(e, "ini", "toml", "yml", "json")
+    } else {
+        false
+    }
+}
+
 pub async fn handle_file(
     client: ApiClient<'_>,
-    file: PathBuf,
+    file: &PathBuf,
     noenv: bool,
 ) -> Result<(), Box<dyn Error>> {
     let mut fig = Figment::new();

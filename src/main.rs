@@ -1,10 +1,10 @@
-use crate::file::handle_file;
 use structopt::StructOpt;
 
 mod api;
 mod cli;
 mod config;
 mod file;
+mod preset;
 mod tags;
 
 #[macro_use]
@@ -13,6 +13,8 @@ mod macros;
 use api::ApiClient;
 use cli::{Category, CliOptions};
 use config::load_env;
+use file::handle_file;
+use preset::handle_preset;
 use tags::tags;
 
 #[tokio::main]
@@ -47,7 +49,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 client.search_categories(&category, max_results).await?
             );
         }
-        Category::File { file, noenv } => handle_file(client, file, noenv).await?,
+        Category::File { file, noenv } => handle_file(client, &file, noenv).await?,
+        Category::Preset { query, noenv } => handle_preset(client, &query, noenv).await?,
         Category::Completions { .. } => {
             unreachable!("already handled above!")
         }

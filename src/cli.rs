@@ -51,6 +51,26 @@ pub enum Category {
         noenv: bool,
         file: PathBuf,
     },
+    /// applies a stream configuration from a preset
+    ///
+    /// Preset files are stored in the platform specific 
+    /// config folders and are matched fuzzily
+    ///
+    /// LINUX: `$XDG_CONFIG_HOME/twitchctl/presets/`
+    ///
+    /// WINDOWS: `{FOLDERID_RoamingAppData}\twitchctl\presets`
+    ///
+    /// MACOS: `$HOME/Library/Application Support`
+    ///
+    /// They follow the same syntax and restrictions as config files.
+    ///
+    /// They can also be overridden with environment variables.
+    Preset {
+        /// Environment variables will be ignored
+        #[structopt(long)]
+        noenv: bool,
+        query: String,
+    },
 }
 
 #[derive(Debug)]

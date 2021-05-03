@@ -20,6 +20,7 @@ structopt = "0.3.21"
 surf = "2.2.0"
 thiserror = "1.0.24"
 derive_builder = "0.10.0"
+dirs = "3.0.2"
 
 [dependencies.figment]
 version = "0.10.5"

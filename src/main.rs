@@ -5,6 +5,7 @@ mod cli;
 mod config;
 mod file;
 mod preset;
+mod rewards;
 mod tags;
 
 #[macro_use]
@@ -16,6 +17,7 @@ use config::load_env;
 use file::handle_file;
 use preset::handle_preset;
 use tags::tags;
+use rewards::rewards;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -54,6 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Category::Completions { .. } => {
             unreachable!("already handled above!")
         }
+        Category::Reward { options } => rewards(client, options.subcommand).await,
     }
 
     Ok(())

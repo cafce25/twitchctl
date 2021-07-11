@@ -1,11 +1,15 @@
 use std::{path::PathBuf, str::FromStr};
 
+use crate::rewards::RewardsOptions;
 use crate::tags::TagsOptions;
-use structopt::{clap::Shell, StructOpt};
+use structopt::{
+    clap::{AppSettings, Shell},
+    StructOpt,
+};
 
 /// A sane Twitch commandline interface
 #[derive(Debug, StructOpt)]
-#[structopt(name = "twitchctl")]
+#[structopt(name = "twitchctl", global_settings = &[AppSettings::DeriveDisplayOrder])]
 pub struct CliOptions {
     #[structopt(subcommand)]
     pub category: Category,
@@ -53,7 +57,7 @@ pub enum Category {
     },
     /// applies a stream configuration from a preset
     ///
-    /// Preset files are stored in the platform specific 
+    /// Preset files are stored in the platform specific
     /// config folders and are matched fuzzily
     ///
     /// LINUX: `$XDG_CONFIG_HOME/twitchctl/presets/`
@@ -70,6 +74,11 @@ pub enum Category {
         #[structopt(long)]
         noenv: bool,
         query: String,
+    },
+    /// creates or manages rewards
+    Reward {
+        #[structopt(flatten)]
+        options: RewardsOptions,
     },
 }
 

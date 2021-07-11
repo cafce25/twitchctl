@@ -31,7 +31,8 @@ version = "1.4.0"
 features = ["full"]
 
 [dependencies.twitch_api2]
-git = "https://github.com/Emilgardis/twitch_api2"
+git = "https://github.com/ModProg/twitch_api2"
+branch = "tagid"
 features = ["helix", "client", "surf"]
 
 [dependencies.twitch_oauth2]

@@ -1,4 +1,4 @@
-use crate::api::{ApiClient, UserIdent};
+use crate::api::{ApiClient, get_broadcaster_id_or_die};
 use crate::{exit, warning};
 use fuzzy_filter::FuzzyFilter;
 use structopt::StructOpt;
@@ -149,24 +149,6 @@ pub async fn tags(client: ApiClient<'_>, locale: &str, command: TagsSubcommand) 
                 Err(e) => exit!(1, "{}", e),
             }
         }
-    }
-}
-
-async fn get_broadcaster_id_or_die(
-    client: &ApiClient<'_>,
-    broadcaster: Option<String>,
-    broadcaster_id: Option<String>,
-) -> UserId {
-    let broadcaster_id = match (broadcaster, broadcaster_id) {
-        (_, Some(i)) => client.get_broadcaster_id(UserIdent::UserId(i.into())),
-        (Some(b), _) => client.get_broadcaster_id(UserIdent::UserName(b.into())),
-        _ => client.get_broadcaster_id(UserIdent::None),
-    }
-    .await;
-
-    match broadcaster_id {
-        Ok(id) => id,
-        Err(e) => exit!(1, "{}", e),
     }
 }
 

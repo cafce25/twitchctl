@@ -5,9 +5,11 @@ use figment::{
     providers::{Env, Format, Toml, Yaml},
     Figment,
 };
+use futures::future::JoinAll;
 use serde::Deserialize;
 use std::error::Error;
 use std::path::PathBuf;
+use twitch_api2::helix::points::{CustomReward, UpdateCustomRewardBody};
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -17,6 +19,8 @@ struct Config {
     title: Option<String>,
     category: Option<String>,
     notification: Option<String>,
+    // #[serde_as(deserialize_as = "Option<OneOrMany<_>>")]
+    rewards: Option<Vec<String>>,
 }
 
 pub fn valid_extension(file: &PathBuf) -> bool {
@@ -97,6 +101,41 @@ pub async fn handle_file(
     }
     if let Some(_notification) = config.notification {
         warning!("Setting notification is not yet supported");
+    }
+    if let Some(rewards) = config.rewards {
+        client
+            .get_rewards(client.get_user_id())
+            .await?
+            .iter()
+            .map(|CustomReward { id, .. }| {
+                client.update_custom_reward(
+                    client.get_user_id(),
+                    id,
+                    UpdateCustomRewardBody::builder().is_enabled(false).build(),
+                )
+            })
+            .collect::<JoinAll<_>>()
+            .await;
+
+        rewards
+            .iter()
+            .map(|title| client.find_reward(client.get_user_id(), title))
+            .collect::<JoinAll<_>>()
+            .await
+            .iter()
+            .filter_map(|r| {
+                if let Ok(Some(CustomReward { id, .. })) = r {
+                    Some(client.update_custom_reward(
+                        client.get_user_id(),
+                        id,
+                        UpdateCustomRewardBody::builder().is_enabled(true).build(),
+                    ))
+                } else {
+                    None
+                }
+            })
+            .collect::<JoinAll<_>>()
+            .await;
     }
     tag_rq.await;
 
